@@ -33,7 +33,20 @@ export async function signUp(formData: FormData) {
   if (error) {
     redirect(`/login?mode=signup&error=${encodeURIComponent(error.message)}`);
   }
-  redirect(`/login?message=${encodeURIComponent("Check your email to confirm, then sign in.")}`);
+
+  // Accounts are auto-confirmed (see auto_confirm_email DB trigger), so sign
+  // the new user straight in. Fall back to the sign-in screen if the project
+  // still requires email confirmation.
+  const { error: signInError } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+  if (signInError) {
+    redirect(
+      `/login?message=${encodeURIComponent("Account created. Please sign in.")}`,
+    );
+  }
+  redirect("/dashboard");
 }
 
 export async function requestPasswordReset(formData: FormData) {
